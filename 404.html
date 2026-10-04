@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Страница не найдена — Blush &amp; Berry</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ECC8C5;
+    --white: #FFFFFF;
+    --ink: #3A1F22;
+    --ink-soft: rgba(58, 31, 34, .66);
+    --display: 'Instrument Serif', 'Cormorant Garamond', 'Times New Roman', serif;
+    --sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease: cubic-bezier(.22, .7, .25, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; min-height: 100svh;
+    background: var(--pink); color: var(--ink);
+    font: 400 16px/1.55 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  header { padding: 22px clamp(16px, 3.4vw, 48px); }
+  .logo { font: 400 26px/1 var(--display); }
+  .logo em { font-style: italic; }
+
+  main {
+    flex: 1; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 20px 16px 60px;
+  }
+  /* огромное 404 за тортиком */
+  .big {
+    position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+    font: 400 clamp(220px, 38vw, 520px)/.8 var(--display); letter-spacing: -.05em;
+    color: rgba(255, 255, 255, .55); white-space: nowrap; pointer-events: none;
+    opacity: 0; animation: fadeUp 1.2s var(--ease-out) .1s forwards;
+  }
+  .cake { position: relative; width: 170px; margin-bottom: 26px; overflow: visible; opacity: 0; animation: fadeUp 1s var(--ease-out) .35s forwards; }
+  .cake .line { fill: none; stroke: var(--white); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .cake .cream { fill: rgba(255, 255, 255, .55); }
+  .cake .berry { fill: #B93A55; }
+  .crumb { fill: var(--white); animation: crumb 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  .crumb:nth-of-type(2) { animation-delay: .4s; } .crumb:nth-of-type(3) { animation-delay: .8s; }
+  @keyframes crumb { 50% { transform: translateY(-3px); } }
+  .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flicker 1.1s ease-in-out infinite; }
+  @keyframes flicker { 50% { transform: scale(1.08, .94) rotate(-2deg); } }
+
+  h1 { position: relative; font: 500 clamp(30px, 3.6vw, 48px)/1.1 var(--sans); letter-spacing: -.03em; margin-bottom: 12px; opacity: 0; animation: fadeUp 1s var(--ease-out) .5s forwards; }
+  p { position: relative; max-width: 420px; color: var(--ink-soft); font-size: 17px; margin-bottom: 30px; opacity: 0; animation: fadeUp 1s var(--ease-out) .62s forwards; }
+  .actions { position: relative; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; opacity: 0; animation: fadeUp 1s var(--ease-out) .74s forwards; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 54px; padding: 0 28px; border-radius: 999px;
+    font: 600 16px/1 var(--sans); border: 1px solid var(--ink);
+    transition: background .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease);
+  }
+  .pill:hover { background: var(--ink); color: var(--white); }
+  .pill-white { background: var(--white); border-color: var(--white); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; } }
+  .big { animation-name: fadeBig; }
+  @keyframes fadeBig { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+</head>
+<body>
+  <header><a href="/" class="logo">Blush <em>&amp;</em> Berry</a></header>
+  <main>
+    <span class="big" aria-hidden="true">404</span>
+
+    <!-- Тортик, у которого уже откусили кусочек -->
+    <svg class="cake" viewBox="0 0 120 150" aria-hidden="true">
+      <!-- верхний ярус с круглым «откусом» справа -->
+      <rect class="cream" x="20" y="86" width="80" height="34" rx="5"/>
+      <path class="cream" d="M38 58h32A10 10 0 0 0 87 70v12a5 5 0 0 1-5 5H38a5 5 0 0 1-5-5V63a5 5 0 0 1 5-5z"/>
+      <circle class="berry" cx="25" cy="85" r="3.2"/><circle class="berry" cx="94" cy="85" r="3.2"/>
+      <g class="line">
+        <path d="M8 126h104M38 126c0 6 6 10 22 10s22-4 22-10M50 136v6h20v-6"/>
+        <rect x="20" y="86" width="80" height="34" rx="5"/>
+        <path d="M38 58h32A10 10 0 0 0 87 70v12a5 5 0 0 1-5 5H38a5 5 0 0 1-5-5V63a5 5 0 0 1 5-5z"/>
+        <path d="M33 64c4 0 4 7 8 7s3-5 7-5 4 9 8 9 3-6 7-6 3 3 5 3"/>
+        <rect x="58.2" y="36" width="3.6" height="22" rx="1.5"/>
+      </g>
+      <path class="flame" d="M60 22c3 4 4 6 4 8a4 4 0 0 1-8 0c0-2 1.5-4.5 4-8z" fill="#FFD27A"/>
+      <!-- крошки -->
+      <circle class="crumb" cx="104" cy="121" r="2.2"/>
+      <circle class="crumb" cx="110" cy="122.5" r="1.4"/>
+      <circle class="crumb" cx="98" cy="123" r="1.2"/>
+    </svg>
+
+    <h1>Такой страницы нет</h1>
+    <p>Похоже, её уже съели. Но торт для вашего праздника мы обязательно соберём.</p>
+    <div class="actions">
+      <a href="/" class="pill pill-white">На главную</a>
+      <a href="/#calc" class="pill">Рассчитать торт</a>
+    </div>
+  </main>
+</body>
+</html>
