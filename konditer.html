@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blush &amp; Berry — кондитер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Telegram Mini App: имя кондитера и тема берутся из Telegram, когда приложение открыто в боте -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --pink: #ECC8C5;
+    --pink-2: #F4DAD7;
+    --white: #FFFFFF;
+    --ink: #3A1F22;
+    --ink-soft: rgba(58, 31, 34, .62);
+    --line: rgba(58, 31, 34, .14);
+    --berry: #8E2440;
+    --green: #2F6B43;
+    --amber: #8A5A12;
+    --display: 'Instrument Serif', 'Cormorant Garamond', 'Times New Roman', serif;
+    --sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease: cubic-bezier(.22, .7, .25, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { background: var(--pink); color: var(--ink); font: 400 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  a { color: inherit; text-decoration: none; }
+  .label { font: 600 10.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .14em; color: var(--ink-soft); }
+
+  /* ---------- Превью на компьютере: приложение в рамке телефона ---------- */
+  .preview { min-height: 100%; display: flex; align-items: center; justify-content: center; gap: 70px; padding: 40px; }
+  .preview-text { max-width: 340px; }
+  .preview-text .label { display: block; margin-bottom: 16px; }
+  .preview-text h1 { font: 500 44px/1.05 var(--sans); letter-spacing: -.035em; margin-bottom: 16px; }
+  .preview-text h1 em { font: italic 400 1.1em/1 var(--display); color: var(--berry); }
+  .preview-text p { color: var(--ink-soft); margin-bottom: 10px; }
+  .device { width: 400px; height: 820px; border-radius: 54px; padding: 13px; background: #1E1415; box-shadow: 0 50px 100px rgba(110, 50, 55, .3), inset 0 0 0 2px #3A2A2B; flex: none; }
+  .app { position: relative; height: 100%; border-radius: 42px; overflow: hidden; background: var(--pink); display: flex; flex-direction: column; }
+  .device .notch { position: absolute; left: 50%; top: 11px; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #1E1415; z-index: 40; }
+  .tg-bar { display: flex; align-items: center; justify-content: space-between; padding: 50px 18px 8px; font-size: 13.5px; font-weight: 600; }
+  .tg-bar span:first-child { color: var(--ink-soft); }
+  @media (max-width: 760px) {
+    .preview { padding: 0; display: block; }
+    .preview-text { display: none; }
+    .device { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; padding: 0; box-shadow: none; background: none; }
+    .app { border-radius: 0; }
+    .device .notch, .tg-bar { display: none; }
+  }
+  .in-telegram .preview-text, .in-telegram .notch, .in-telegram .tg-bar { display: none; }
+
+  /* ---------- Экраны ---------- */
+  .screens { position: relative; flex: 1; overflow: hidden; }
+  .screen {
+    position: absolute; inset: 0; overflow-y: auto; padding: 14px 16px 110px; scrollbar-width: none;
+    opacity: 0; transform: translateX(24px); pointer-events: none;
+    transition: opacity .35s var(--ease), transform .5s var(--ease-out);
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen.on { opacity: 1; transform: none; pointer-events: auto; }
+  .screen.left { transform: translateX(-24px); }
+
+  .hello { display: flex; justify-content: space-between; align-items: center; margin: 6px 2px 16px; }
+  .hello .logo { font: 400 24px/1 var(--display); }
+  .hello .logo em { font-style: italic; }
+  .hello .role { padding: 7px 12px; border-radius: 999px; background: var(--ink); color: var(--white); font-size: 11.5px; font-weight: 700; letter-spacing: .04em; }
+  .greet { font: 500 28px/1.1 var(--sans); letter-spacing: -.03em; margin: 0 2px 4px; }
+  .greet em { font: italic 400 1.12em/1 var(--display); color: var(--berry); }
+  .today { margin: 0 2px 18px; color: var(--ink-soft); font-size: 14px; }
+  h2 { font: 500 26px/1.1 var(--sans); letter-spacing: -.03em; margin: 4px 2px 16px; }
+  .sec-title { display: flex; justify-content: space-between; align-items: baseline; margin: 24px 2px 10px; }
+  .sec-title b { font-weight: 600; font-size: 16px; }
+  .sec-title button { font-size: 13.5px; font-weight: 600; color: var(--berry); }
+  .mt { margin-top: 12px; }
+
+  /* Карта выручки с перламутром */
+  .card {
+    position: relative; overflow: hidden; border-radius: 26px; padding: 22px 22px 20px; color: var(--white);
+    background: linear-gradient(135deg, #5A2A33 0%, #3A1F22 60%, #24131A 100%);
+    box-shadow: 0 24px 50px rgba(58, 31, 34, .3);
+    transition: transform .6s var(--ease-out);
+  }
+  .card::before {
+    content: ''; position: absolute; inset: -40%;
+    background: conic-gradient(from 0deg, transparent 0 20%, rgba(255, 200, 215, .3), rgba(220, 200, 255, .22), rgba(255, 230, 210, .25), transparent 45% 100%);
+    animation: pearl 8s linear infinite; mix-blend-mode: soft-light;
+  }
+  @keyframes pearl { to { transform: rotate(360deg); } }
+  .card > * { position: relative; }
+  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+  .card-top .label { color: rgba(255, 255, 255, .6); }
+  .trend { padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, .14); font-size: 12px; font-weight: 700; }
+  .card .bal { font: 400 56px/.9 var(--display); letter-spacing: -.02em; }
+  .card .bal small { font-size: .5em; opacity: .7; }
+  .card .bal-sub { font-size: 13.5px; opacity: .7; margin: 6px 0 16px; }
+  .bars { display: flex; align-items: flex-end; gap: 5px; height: 46px; }
+  .bars i { flex: 1; border-radius: 4px 4px 2px 2px; background: rgba(255, 255, 255, .22); height: 0; transition: height 1s var(--ease-out); }
+  .bars i.now { background: var(--pink); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .stat { padding: 14px 12px; border-radius: 20px; background: rgba(255, 255, 255, .42); border: 1px solid rgba(255, 255, 255, .8); text-align: left; }
+  .stat b { display: block; font: 400 34px/1 var(--display); }
+  .stat span { font-size: 12px; color: var(--ink-soft); line-height: 1.3; display: block; margin-top: 4px; }
+  .stat.hot b { color: var(--berry); }
+
+  /* Ближайший торт */
+  .next {
+    position: relative; display: grid; grid-template-columns: 1fr 112px; gap: 10px; align-items: end; width: 100%; text-align: left;
+    padding: 18px; border-radius: 24px; background: var(--white); box-shadow: 0 14px 34px rgba(110, 50, 55, .1); overflow: hidden;
+  }
+  .next .label { display: block; margin-bottom: 8px; color: var(--berry); }
+  .next .when { font: 400 34px/1 var(--display); margin-bottom: 6px; }
+  .next small { display: block; color: var(--ink-soft); font-size: 13px; }
+  .next .pic { position: relative; height: 112px; border-radius: 18px; background: var(--pink-2); overflow: hidden; }
+  .next .pic img { position: absolute; left: 50%; bottom: 6%; height: 88%; transform: translateX(-50%); }
+  .countdown { display: flex; gap: 6px; margin-top: 12px; }
+  .countdown span { padding: 6px 9px; border-radius: 10px; background: var(--pink-2); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Карточка заявки */
+  .req {
+    display: block; width: 100%; text-align: left; padding: 16px; border-radius: 22px; background: var(--white);
+    box-shadow: 0 10px 28px rgba(110, 50, 55, .08); margin-bottom: 10px;
+    transition: transform .2s var(--ease);
+  }
+  .req:active { transform: scale(.985); }
+  .req-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .req-head .num { font: 400 26px/1 var(--display); }
+  .chip { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .chip.new { background: #FBE3E8; color: var(--berry); }
+  .chip.work { background: #FFF4E5; color: var(--amber); }
+  .chip.priced { background: #EFE9FB; color: #5A3E99; }
+  .chip.confirmed { background: #EAF4EC; color: var(--green); }
+  .chip.done { background: rgba(58, 31, 34, .08); color: var(--ink-soft); }
+  .req-title { font-weight: 600; font-size: 16px; }
+  .req-meta { color: var(--ink-soft); font-size: 13.5px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tags span { padding: 5px 10px; border-radius: 999px; background: var(--pink-2); font-size: 12px; font-weight: 600; }
+  .req-actions { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; margin-top: 14px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 44px; border-radius: 999px; font-weight: 600; font-size: 14px; transition: transform .2s var(--ease); }
+  .btn:active { transform: scale(.96); }
+  .btn-dark { background: var(--ink); color: var(--white); }
+  .btn-ghost { border: 1px solid var(--line); }
+  .btn-white { background: var(--white); }
+  .empty { padding: 30px 10px; text-align: center; color: var(--ink-soft); font-size: 14px; }
+  .empty b { display: block; font: 400 30px/1 var(--display); color: var(--ink); margin-bottom: 6px; }
+
+  /* Неделя */
+  .week { background: var(--white); border-radius: 22px; padding: 4px 16px; }
+  .week div { display: grid; grid-template-columns: 46px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .week div:last-child { border-bottom: 0; }
+  .week .d { text-align: center; line-height: 1; }
+  .week .d b { display: block; font: 400 26px/1 var(--display); }
+  .week .d small { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .08em; }
+  .week p b { display: block; font-weight: 600; font-size: 14.5px; }
+  .week p small { color: var(--ink-soft); font-size: 12.5px; }
+
+  /* Сегменты */
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; border-radius: 999px; background: rgba(255, 255, 255, .45); margin-bottom: 14px; }
+  .seg button { height: 40px; border-radius: 999px; font-weight: 600; font-size: 13.5px; color: var(--ink-soft); transition: background .3s, color .3s; }
+  .seg button.on { background: var(--ink); color: var(--white); }
+  .seg sup { font-size: 10px; margin-left: 2px; }
+
+  /* ---------- Календарь ---------- */
+  .cal { background: var(--white); border-radius: 24px; padding: 16px 14px 12px; }
+  .cal-head { display: flex; justify-content: space-between; align-items: center; margin: 0 4px 12px; }
+  .cal-head b { font: 400 28px/1 var(--display); }
+  .cal-head .nav { display: flex; gap: 6px; }
+  .cal-head .nav button { width: 34px; height: 34px; border-radius: 50%; background: var(--pink-2); font-size: 16px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+  .cal-grid .wd { text-align: center; font-size: 11px; font-weight: 600; color: var(--ink-soft); padding-bottom: 6px; }
+  .day { position: relative; height: 46px; min-width: 0; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-weight: 600; font-size: 14.5px; transition: background .25s, color .25s, transform .2s; }
+  .day:active { transform: scale(.92); }
+  .day.past { color: rgba(58, 31, 34, .3); }
+  .day.today { box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .day.sel { background: var(--ink); color: var(--white); }
+  .day .pips { display: flex; gap: 2px; height: 5px; }
+  .day .pips i { width: 5px; height: 5px; border-radius: 50%; background: var(--berry); }
+  .day.sel .pips i { background: var(--pink); }
+  .day.full { background: #FBE3E8; }
+  .day.closed { color: rgba(58, 31, 34, .35); background: repeating-linear-gradient(-45deg, transparent 0 5px, rgba(58, 31, 34, .07) 5px 6px); }
+  .day.closed.sel { background: var(--ink); color: rgba(255,255,255,.6); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 4px 0; font-size: 12px; color: var(--ink-soft); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 12px; height: 12px; border-radius: 4px; }
+  .day-panel { margin-top: 12px; padding: 18px; border-radius: 22px; background: rgba(255, 255, 255, .42); border: 1px solid rgba(255, 255, 255, .8); }
+  .day-panel h3 { font: 400 30px/1 var(--display); margin-bottom: 4px; }
+  .day-panel > small { color: var(--ink-soft); font-size: 13px; display: block; margin-bottom: 12px; }
+  .load { height: 6px; border-radius: 6px; background: rgba(58, 31, 34, .1); overflow: hidden; margin-bottom: 14px; }
+  .load i { display: block; height: 100%; background: var(--ink); border-radius: 6px; transition: width .6s var(--ease-out); }
+  .day-list .req { margin-bottom: 8px; padding: 12px 14px; }
+  .switch { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 16px; background: var(--white); margin-top: 6px; font-weight: 600; font-size: 14.5px; width: 100%; }
+  .tgl { position: relative; width: 46px; height: 28px; border-radius: 999px; background: rgba(58, 31, 34, .18); transition: background .3s; flex: none; }
+  .tgl::after { content: ''; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--white); transition: transform .35s var(--ease-out); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+  .tgl.on { background: var(--berry); }
+  .tgl.on::after { transform: translateX(18px); }
+
+  /* ---------- Клиенты ---------- */
+  .search { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; border-radius: 999px; background: var(--white); margin-bottom: 14px; }
+  .search input { flex: 1; border: 0; outline: 0; font: inherit; background: none; color: var(--ink); }
+  .review { padding: 14px; border-radius: 22px; background: var(--white); margin-bottom: 10px; display: grid; grid-template-columns: 84px 1fr; gap: 14px; transition: opacity .4s, transform .4s var(--ease-out); }
+  .review .ph { position: relative; height: 100px; border-radius: 16px; background: var(--pink-2); overflow: hidden; }
+  .review .ph img { position: absolute; left: 50%; bottom: 6%; height: 88%; transform: translateX(-50%); }
+  .review b { font-weight: 600; font-size: 14.5px; }
+  .review .stars { color: var(--berry); font-size: 12px; letter-spacing: 2px; }
+  .review p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.4; margin: 2px 0 10px; }
+  .review .row { display: flex; gap: 6px; }
+  .review .btn { height: 34px; font-size: 12.5px; padding: 0 12px; }
+  .review.gone { opacity: 0; transform: translateX(40px); }
+  .clients { background: var(--white); border-radius: 22px; padding: 4px 16px; }
+  .client { display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--line); width: 100%; text-align: left; }
+  .client:last-child { border-bottom: 0; }
+  .client .av { width: 42px; height: 42px; border-radius: 50%; background: var(--pink-2); display: grid; place-items: center; font: 400 20px/1 var(--display); }
+  .client b { display: block; font-weight: 600; font-size: 14.5px; }
+  .client small { color: var(--ink-soft); font-size: 12.5px; }
+  .client .bonus { text-align: right; font-weight: 700; font-size: 14px; }
+  .client .bonus small { display: block; font-weight: 600; font-size: 11px; }
+  .vip { color: var(--berry); }
+
+  /* ---------- Карточка заказа (выезжает снизу) ---------- */
+  .shade { position: absolute; inset: 0; z-index: 30; background: rgba(36, 19, 26, .35); opacity: 0; pointer-events: none; transition: opacity .35s; }
+  .shade.on { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 31; max-height: 90%; overflow-y: auto; scrollbar-width: none;
+    background: var(--pink); border-radius: 30px 30px 0 0; padding: 10px 16px 28px;
+    transform: translateY(105%); transition: transform .55s var(--ease-out);
+    box-shadow: 0 -20px 50px rgba(36, 19, 26, .2);
+  }
+  .sheet::-webkit-scrollbar { display: none; }
+  .sheet.on { transform: none; }
+  .grab { width: 40px; height: 5px; border-radius: 5px; background: rgba(58, 31, 34, .2); margin: 0 auto 14px; }
+  .sh-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .sh-head .num { font: 400 52px/.9 var(--display); }
+  .sh-head small { display: block; color: var(--ink-soft); font-size: 13.5px; margin-top: 6px; }
+  .refs { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 12px; padding: 0 16px; scrollbar-width: none; }
+  .refs::-webkit-scrollbar { display: none; }
+  .refs div { position: relative; flex: none; width: 104px; height: 104px; border-radius: 18px; background: var(--pink-2); overflow: hidden; }
+  .refs img { position: absolute; left: 50%; bottom: 6%; height: 88%; transform: translateX(-50%); }
+  .refs span { position: absolute; left: 8px; top: 8px; padding: 3px 7px; border-radius: 8px; background: rgba(255,255,255,.85); font-size: 10.5px; font-weight: 700; }
+  .details { background: var(--white); border-radius: 22px; padding: 6px 18px; }
+  .details div { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+  .details div:last-child { border-bottom: 0; }
+  .details span { color: var(--ink-soft); flex: none; }
+  .details b { font-weight: 600; text-align: right; }
+  .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+
+  /* Калькулятор */
+  .calc { margin-top: 12px; padding: 18px; border-radius: 24px; background: var(--white); }
+  .calc .label { display: block; margin-bottom: 12px; }
+  .calc-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 14.5px; }
+  .stepper { display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: var(--pink-2); }
+  .stepper button { width: 32px; height: 32px; border-radius: 50%; background: var(--white); font-size: 17px; font-weight: 600; }
+  .stepper b { min-width: 62px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .adds { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+  .adds button { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 12.5px; font-weight: 600; transition: background .25s, color .25s, border-color .25s; }
+  .adds button.on { background: var(--ink); border-color: var(--ink); color: var(--white); }
+  .total { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .total b { display: block; font: 400 44px/1 var(--display); letter-spacing: -.02em; }
+  .total small { color: var(--ink-soft); font-size: 12.5px; }
+  .note { margin-top: 10px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.5); font-size: 13px; color: var(--ink-soft); }
+  .note b { color: var(--ink); }
+  .sh-actions { display: grid; gap: 8px; margin-top: 12px; }
+  .sh-actions .btn { height: 52px; font-size: 15px; }
+
+  /* ---------- Нижнее меню ---------- */
+  .tabs {
+    position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 20;
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px;
+    border-radius: 26px; background: rgba(255, 255, 255, .78);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+    box-shadow: 0 14px 40px rgba(110, 50, 55, .16);
+  }
+  .tabs button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 0 6px; border-radius: 20px; font-size: 11px; font-weight: 600; color: var(--ink-soft); transition: background .3s, color .3s; }
+  .tabs svg { width: 22px; height: 22px; }
+  .tabs button.on { background: var(--ink); color: var(--white); }
+  .badge { position: absolute; top: 3px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px; background: var(--berry); color: var(--white); font-size: 10px; font-weight: 700; line-height: 17px; }
+  .badge:empty { display: none; }
+
+  .toast { position: absolute; left: 50%; bottom: 96px; z-index: 50; transform: translate(-50%, 20px); opacity: 0; padding: 11px 18px; border-radius: 999px; background: var(--ink); color: var(--white); font-size: 13.5px; font-weight: 600; white-space: nowrap; transition: opacity .3s, transform .4s var(--ease-out); pointer-events: none; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .reveal > * { animation: rise .6s var(--ease-out) both; }
+  .reveal > *:nth-child(2) { animation-delay: .05s; } .reveal > *:nth-child(3) { animation-delay: .1s; } .reveal > *:nth-child(4) { animation-delay: .15s; }
+  .reveal > *:nth-child(5) { animation-delay: .2s; } .reveal > *:nth-child(6) { animation-delay: .25s; } .reveal > *:nth-child(n+7) { animation-delay: .3s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="preview">
+  <div class="preview-text">
+    <span class="label">Telegram · мини-приложение</span>
+    <h1>Кабинет <em>кондитера</em></h1>
+    <p>Приложение во втором боте — только для кондитера. Заявки, расчёт стоимости, календарь и клиенты в одном месте.</p>
+    <p>Откройте заявку, возьмите её в работу и посчитайте торт. Можно нажимать дни в календаре и закрывать даты. Данные — пример.</p>
+  </div>
+
+  <div class="device">
+    <div class="app" id="app">
+      <span class="notch"></span>
+      <div class="tg-bar"><span>✕ Закрыть</span><span>Кондитер</span><span>⋯</span></div>
+
+      <div class="screens">
+        <!-- СЕГОДНЯ -->
+        <section class="screen on" data-tab="home">
+          <div class="reveal">
+            <div class="hello"><span class="logo">Blush <em>&amp;</em> Berry</span><span class="role">Кондитер</span></div>
+            <p class="greet">Доброе утро, <em id="userName">Анна</em></p>
+            <p class="today" id="todayText"></p>
+
+            <div class="card">
+              <div class="card-top"><span class="label">Выручка · октябрь</span><span class="trend">↑ 18% к сентябрю</span></div>
+              <div class="bal"><span data-count="186400">0</span> <small>₽</small></div>
+              <div class="bal-sub">14 тортов · средний чек 13 300 ₽</div>
+              <div class="bars" id="bars"></div>
+            </div>
+
+            <div class="stats">
+              <button class="stat hot" data-go="orders" data-filter="new"><b id="stNew">3</b><span>новые заявки</span></button>
+              <button class="stat" data-go="orders" data-filter="work"><b id="stWork">3</b><span>в работе</span></button>
+              <button class="stat" data-go="cal"><b>5</b><span>тортов на неделе</span></button>
+            </div>
+
+            <div class="sec-title"><b>Ближайший торт</b></div>
+            <button class="next" data-open="27">
+              <div>
+                <span class="label">Завтра · 14:00 · доставка</span>
+                <div class="when">Свадьба Марии</div>
+                <small>№27 · 6 кг · Красный бархат + Ягодная</small>
+                <div class="countdown" id="countdown"></div>
+              </div>
+              <div class="pic"><img src="img/cake-wedding.webp" alt=""></div>
+            </button>
+
+            <div class="sec-title"><b>Новые заявки</b><button data-go="orders" data-filter="new">Все</button></div>
+            <div id="homeNew"></div>
+
+            <div class="sec-title"><b>Эта неделя</b><button data-go="cal">Календарь</button></div>
+            <div class="week" id="week"></div>
+          </div>
+        </section>
+
+        <!-- ЗАЯВКИ -->
+        <section class="screen" data-tab="orders">
+          <div class="reveal">
+            <h2>Заявки</h2>
+            <div class="seg" id="seg">
+              <button class="on" data-f="new">Новые<sup id="cNew"></sup></button>
+              <button data-f="work">В работе<sup id="cWork"></sup></button>
+              <button data-f="done">Готовы</button>
+            </div>
+            <div id="orderList"></div>
+          </div>
+        </section>
+
+        <!-- КАЛЕНДАРЬ -->
+        <section class="screen" data-tab="cal">
+          <div class="reveal">
+            <h2>Календарь</h2>
+            <div class="cal">
+              <div class="cal-head"><b>Октябрь 2026</b><div class="nav"><button aria-label="Назад">‹</button><button aria-label="Вперёд">›</button></div></div>
+              <div class="cal-grid" id="calGrid"></div>
+              <div class="legend">
+                <span><i style="background:var(--berry);width:6px;height:6px;border-radius:50%"></i>торт</span>
+                <span><i style="background:#FBE3E8"></i>день занят</span>
+                <span><i style="background:repeating-linear-gradient(-45deg,transparent 0 3px,rgba(58,31,34,.18) 3px 4px)"></i>выходной</span>
+              </div>
+            </div>
+            <div class="day-panel" id="dayPanel"></div>
+          </div>
+        </section>
+
+        <!-- КЛИЕНТЫ -->
+        <section class="screen" data-tab="clients">
+          <div class="reveal">
+            <h2>Клиенты</h2>
+            <label class="search"><span>🔍</span><input id="search" placeholder="Имя или телефон"></label>
+            <div class="sec-title" style="margin-top:4px"><b>Новые отзывы</b><span class="label" id="revCount">2</span></div>
+            <div id="reviews">
+              <div class="review">
+                <div class="ph"><img src="img/cake-birthday.webp" alt=""></div>
+                <div>
+                  <b>Ольга · №26</b><div class="stars">★★★★★</div>
+                  <p>«Торт просто космос! Дочка в восторге, гости спрашивали контакты 💛»</p>
+                  <div class="row"><button class="btn btn-dark" data-rev="На сайт">На сайт</button><button class="btn btn-ghost" data-rev="Скрыт">Скрыть</button></div>
+                </div>
+              </div>
+              <div class="review">
+                <div class="ph"><img src="img/cake-corporate.webp" alt=""></div>
+                <div>
+                  <b>Волга-Тех · №24</b><div class="stars">★★★★★</div>
+                  <p>«Спасибо за корпоративный торт, всё вовремя и очень вкусно.»</p>
+                  <div class="row"><button class="btn btn-dark" data-rev="На сайт">На сайт</button><button class="btn btn-ghost" data-rev="Скрыт">Скрыть</button></div>
+                </div>
+              </div>
+            </div>
+            <div class="sec-title"><b>Все клиенты</b><span class="label">48</span></div>
+            <div class="clients" id="clients"></div>
+          </div>
+        </section>
+      </div>
+
+      <nav class="tabs">
+        <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>Сегодня</button>
+        <button data-go="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 12h16v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM6 12V9h12v3M12 9V5"/><path d="M12 3.5c.8.8 1 1.3 1 1.7a1 1 0 0 1-2 0c0-.4.2-.9 1-1.7z"/></svg>Заявки<span class="badge" id="badge"></span></button>
+        <button data-go="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Календарь</button>
+        <button data-go="clients"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 5.2a3.4 3.4 0 0 1 0 6.6M18.5 14.8c1.7.8 2.7 2.5 3 5.2"/></svg>Клиенты</button>
+      </nav>
+
+      <div class="shade" id="shade"></div>
+      <div class="sheet" id="sheet"></div>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Внутри Telegram ----------
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg && tg.initData) {
+    document.body.classList.add('in-telegram');
+    tg.ready(); tg.expand();
+    tg.setHeaderColor && tg.setHeaderColor('#ECC8C5');
+    tg.setBackgroundColor && tg.setBackgroundColor('#ECC8C5');
+    const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (u && u.first_name) document.getElementById('userName').textContent = u.first_name;
+  }
+  const haptic = t => tg && tg.HapticFeedback && (t === 'ok' ? tg.HapticFeedback.notificationOccurred('success') : tg.HapticFeedback.selectionChanged());
+  const $ = id => document.getElementById(id);
+  const money = n => n.toLocaleString('ru-RU') + ' ₽';
+
+  // ---------- Демо-данные (потом придут из бота) ----------
+  const PRICE_KG = 3200;
+  const ADDS = [['Ягоды', 800], ['Живые цветы', 1500], ['Топпер', 500], ['Фигурки', 2000], ['Доставка', 500]];
+  const ORDERS = [
+    { id: 31, status: 'new', occasion: 'Свадьба', day: 18, time: '16:00', guests: 60, kg: 6, sponge: 'Шоколадный', filling: 'Фисташковая', pickup: 'Доставка', address: 'ул. Мира, 12, ресторан «Палуба»', name: 'Екатерина', contact: '@katya_s', reply: 'Telegram', wishes: 'Три яруса, белый крем, живые пионы', refs: ['cake-wedding', '05-cake'], img: 'cake-wedding', age: '12 мин назад' },
+    { id: 30, status: 'new', occasion: 'День рождения', day: 11, time: '12:00', guests: 15, kg: 2, sponge: 'Красный бархат', filling: 'Ягодная', pickup: 'Самовывоз', name: 'Ольга', contact: '+7 917 555-12-30', reply: 'WhatsApp', wishes: 'Надпись «Соне 7 лет», без орехов', liked: 'Торт на день рождения', refs: ['cake-birthday'], img: 'cake-birthday', age: '1 ч назад' },
+    { id: 29, status: 'new', occasion: 'Корпоратив', day: 24, time: '18:00', guests: 40, kg: 4, sponge: 'Шоколадный', filling: 'Шоколадная', pickup: 'Доставка', address: 'пр. Ленина, 56, офис 4', name: 'Дмитрий · Волга-Тех', contact: '+7 902 380-44-17', reply: 'Telegram', wishes: 'Логотип компании на торте', refs: ['cake-corporate'], img: 'cake-corporate', age: 'вчера' },
+    { id: 28, status: 'priced', occasion: 'День рождения', day: 9, time: '15:00', guests: 20, kg: 3, sponge: 'Медовый', filling: 'Ванильная', pickup: 'Самовывоз', name: 'Анна К.', contact: '@anna_kr', reply: 'Telegram', price: 10400, refs: [], img: 'cake-birthday', age: '2 дня назад' },
+    { id: 27, status: 'confirmed', occasion: 'Свадьба', day: 5, time: '14:00', guests: 55, kg: 6, sponge: 'Красный бархат', filling: 'Ягодная', pickup: 'Доставка', address: 'Кафе «Белые ночи»', name: 'Мария', contact: '@maria_v', reply: 'Telegram', price: 28800, paid: true, refs: ['cake-wedding'], img: 'cake-wedding', age: '5 дней назад' },
+    { id: 32, status: 'work', occasion: 'День рождения', day: 7, time: '13:00', guests: 12, kg: 1.5, sponge: 'Шоколадный', filling: 'Шоколадная', pickup: 'Самовывоз', name: 'Ирина', contact: '+7 961 070-22-91', reply: 'WhatsApp', refs: [], img: '05-cake', age: '3 дня назад' },
+    { id: 26, status: 'done', occasion: 'День рождения', day: 2, time: '11:00', guests: 18, kg: 2.5, sponge: 'Красный бархат', filling: 'Ягодная', pickup: 'Самовывоз', name: 'Ольга', contact: '+7 917 555-12-30', reply: 'WhatsApp', price: 8800, refs: [], img: 'cake-birthday', age: '2 октября' },
+  ];
+  const STATUS = { new: 'Новая', work: 'Считаю', priced: 'Ждём ответа', confirmed: 'Подтверждён', done: 'Выполнен' };
+  const isWork = s => ['work', 'priced', 'confirmed'].includes(s);
+  const MONTH = 'октября';
+  const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+  const TODAY = 4; // 4 октября 2026, воскресенье
+  const wdOf = d => WD[(d + 3) % 7]; // 1 октября 2026 — четверг
+  const closed = new Set([13, 20, 27]); // выходные кондитера
+  const MAX_DAY = 3;
+  const extra = { 5: 1, 7: 1, 17: 3, 10: 2, 18: 1, 25: 1 }; // торты из прошлых заявок (для наглядности)
+
+  $('todayText').textContent = `Воскресенье, ${TODAY} ${MONTH}`;
+
+  // ---------- Карточки заявок ----------
+  function reqCard(o, quick) {
+    const when = o.day === TODAY + 1 ? 'завтра' : `${o.day} ${MONTH}, ${wdOf(o.day)}`;
+    return `<button class="req" data-open="${o.id}">
+      <div class="req-head"><span class="num">№${o.id}</span><span class="chip ${o.status}">${STATUS[o.status]}</span></div>
+      <div class="req-title">${o.occasion} · ${when}</div>
+      <div class="req-meta">${o.name} · ${o.age}</div>
+      <div class="tags"><span>${o.guests} гостей</span><span>~${String(o.kg).replace('.', ',')} кг</span><span>${o.filling}</span>${o.refs.length ? `<span>📎 ${o.refs.length}</span>` : ''}${o.price ? `<span>${money(o.price)}</span>` : ''}</div>
+      ${quick ? `<div class="req-actions"><span class="btn btn-dark" data-act="take" data-id="${o.id}">Взять в работу</span><span class="btn btn-ghost" data-act="busy" data-id="${o.id}">Дата занята</span></div>` : ''}
+    </button>`;
+  }
+  let filter = 'new';
+  function renderLists() {
+    const news = ORDERS.filter(o => o.status === 'new');
+    const works = ORDERS.filter(o => isWork(o.status)).sort((a, b) => a.day - b.day);
+    $('homeNew').innerHTML = news.length ? news.slice(0, 2).map(o => reqCard(o, true)).join('') : '<div class="empty"><b>Всё разобрано</b>Новых заявок пока нет</div>';
+    const list = filter === 'new' ? news : filter === 'work' ? works : ORDERS.filter(o => o.status === 'done');
+    $('orderList').innerHTML = list.length ? list.map(o => reqCard(o, filter === 'new')).join('') : '<div class="empty"><b>Пусто</b>Здесь появятся заявки</div>';
+    $('stNew').textContent = news.length; $('stWork').textContent = works.length;
+    $('cNew').textContent = news.length || ''; $('cWork').textContent = works.length || '';
+    $('badge').textContent = news.length || '';
+    document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.f === filter));
+    renderWeek(); renderCal();
+  }
+
+  // Неделя
+  function renderWeek() {
+    const items = ORDERS.filter(o => o.day > TODAY && o.day <= TODAY + 7 && o.status !== 'new').sort((a, b) => a.day - b.day);
+    $('week').innerHTML = items.map(o => `<div data-open="${o.id}" style="cursor:pointer">
+      <span class="d"><b>${o.day}</b><small>${wdOf(o.day)}</small></span>
+      <p><b>${o.occasion} · ${o.name}</b><small>${o.time} · ${o.kg} кг · ${o.pickup.toLowerCase()}</small></p>
+      <span class="chip ${o.status}">${STATUS[o.status]}</span></div>`).join('') || '<div class="empty" style="display:block">Свободная неделя</div>';
+  }
+
+  // Выручка по дням (столбики)
+  $('bars').innerHTML = [30, 55, 20, 70, 45, 90, 60, 35, 80, 50, 100, 65].map((h, i, a) => `<i data-h="${h}" class="${i === a.length - 1 ? 'now' : ''}"></i>`).join('');
+  function growBars() { document.querySelectorAll('#bars i').forEach((b, i) => { b.style.height = '0'; setTimeout(() => b.style.height = b.dataset.h + '%', 60 + i * 40); }); }
+
+  // Обратный отсчёт до ближайшего торта
+  const target = Date.now() + (26 * 3600 + 17 * 60) * 1000;
+  function tick() {
+    let s = Math.max(0, Math.floor((target - Date.now()) / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); s %= 60;
+    $('countdown').innerHTML = `<span>${h} ч</span><span>${String(m).padStart(2, '0')} мин</span><span>${String(s).padStart(2, '0')} с</span>`;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // ---------- Календарь ----------
+  let selDay = 5;
+  function cakesOn(d) { return ORDERS.filter(o => o.day === d && o.status !== 'done' && o.status !== 'busy'); }
+  function loadOf(d) { return Math.min(MAX_DAY, cakesOn(d).length + (extra[d] || 0)); }
+  function renderCal() {
+    let html = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map(w => `<span class="wd">${w}</span>`).join('');
+    html += '<span></span>'.repeat(3);
+    for (let d = 1; d <= 31; d++) {
+      const n = loadOf(d), cls = ['day'];
+      if (d < TODAY) cls.push('past'); if (d === TODAY) cls.push('today'); if (d === selDay) cls.push('sel');
+      if (closed.has(d)) cls.push('closed'); else if (n >= MAX_DAY) cls.push('full');
+      html += `<button class="${cls.join(' ')}" data-day="${d}">${d}<span class="pips">${'<i></i>'.repeat(closed.has(d) ? 0 : n)}</span></button>`;
+    }
+    $('calGrid').innerHTML = html;
+    renderDay();
+  }
+  function renderDay() {
+    const d = selDay, list = cakesOn(d), n = loadOf(d), off = closed.has(d);
+    const word = n === 1 ? 'торт' : n > 1 && n < 5 ? 'торта' : 'тортов';
+    $('dayPanel').innerHTML = `
+      <h3>${d} ${MONTH}, ${wdOf(d)}</h3>
+      <small>${off ? 'Выходной — заявки на этот день не принимаются' : `${n} ${word} из ${MAX_DAY} · ${n >= MAX_DAY ? 'день занят' : 'есть окно'}`}</small>
+      <div class="load"><i style="width:${off ? 0 : n / MAX_DAY * 100}%"></i></div>
+      <div class="day-list">${list.map(o => reqCard(o)).join('')}</div>
+      <button class="switch" data-close="${d}">Закрыть дату для заявок<span class="tgl ${off ? 'on' : ''}"></span></button>`;
+  }
+  $('calGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-day]'); if (!b) return;
+    selDay = +b.dataset.day; renderCal(); haptic();
+  });
+  document.querySelector('.cal-head .nav').addEventListener('click', () => toast('Пример — показан только октябрь'));
+  $('dayPanel').addEventListener('click', e => {
+    const b = e.target.closest('[data-close]'); if (!b) return;
+    const d = +b.dataset.close;
+    closed.has(d) ? closed.delete(d) : closed.add(d);
+    renderCal(); toast(closed.has(d) ? `${d} ${MONTH} закрыто — на сайте дата недоступна` : `${d} ${MONTH} снова открыто`); haptic('ok');
+  });
+
+  // ---------- Клиенты ----------
+  const CLIENTS = [
+    ['Анна К.', '@anna_kr', 4, 3260, true], ['Мария', '@maria_v', 2, 1740, false], ['Ольга', '+7 917 555-12-30', 3, 1120, true],
+    ['Волга-Тех', '+7 902 380-44-17', 5, 4800, true], ['Екатерина', '@katya_s', 0, 0, false], ['Ирина', '+7 961 070-22-91', 1, 310, false],
+  ];
+  function renderClients(q = '') {
+    q = q.toLowerCase();
+    $('clients').innerHTML = CLIENTS.filter(c => (c[0] + c[1]).toLowerCase().includes(q)).map(c => `
+      <button class="client" data-toast="Открыть чат с ${c[0]} — в рабочей версии">
+        <span class="av">${c[0][0]}</span>
+        <span><b>${c[0]}</b><small>${c[2] ? `${c[2]} ${c[2] === 1 ? 'заказ' : c[2] < 5 ? 'заказа' : 'заказов'}` : 'первая заявка'} · ${c[1]}</small></span>
+        <span class="bonus ${c[4] ? 'vip' : ''}">${c[3].toLocaleString('ru-RU')}<small>${c[4] ? 'Свой человек' : 'бонусов'}</small></span>
+      </button>`).join('') || '<div class="empty">Никого не нашли</div>';
+  }
+  $('search').addEventListener('input', e => renderClients(e.target.value));
+  renderClients();
+  $('reviews').addEventListener('click', e => {
+    const b = e.target.closest('[data-rev]'); if (!b) return;
+    const card = b.closest('.review'); card.classList.add('gone');
+    setTimeout(() => { card.remove(); $('revCount').textContent = $('reviews').children.length; }, 380);
+    toast(b.dataset.rev === 'На сайт' ? 'Отзыв опубликован на сайте ✓' : 'Отзыв скрыт'); haptic('ok');
+  });
+
+  // ---------- Карточка заказа ----------
+  let cur = null, calcKg = 2, adds = new Set();
+  function calcTotal() { return Math.round(calcKg * PRICE_KG + [...adds].reduce((s, i) => s + ADDS[i][1], 0)); }
+  function openOrder(id) {
+    cur = ORDERS.find(o => o.id === +id); if (!cur) return;
+    calcKg = cur.kg; adds = new Set(cur.pickup === 'Доставка' ? [4] : []);
+    renderSheet();
+    $('sheet').scrollTop = 0; $('sheet').classList.add('on'); $('shade').classList.add('on'); haptic();
+  }
+  function closeSheet() { $('sheet').classList.remove('on'); $('shade').classList.remove('on'); }
+  function renderSheet() {
+    const o = cur;
+    const rows = [['Повод', o.occasion], ['Дата', `${o.day} ${MONTH}, ${wdOf(o.day)} · ${o.time}`], ['Гостей', `${o.guests} · ~${o.kg} кг`], ['Бисквит', o.sponge], ['Начинка', o.filling],
+      ['Получение', o.pickup + (o.address ? ` — ${o.address}` : '')], o.liked && ['Похож на', `«${o.liked}»`], o.wishes && ['Пожелания', o.wishes]].filter(Boolean);
+    let action = '';
+    if (o.status === 'new') action = `
+      <div class="sh-actions"><button class="btn btn-dark" data-act="take" data-id="${o.id}">Взять в работу</button><button class="btn btn-white" data-act="busy" data-id="${o.id}">Дата занята — предложить другую</button></div>`;
+    else if (o.status === 'work') action = `
+      <div class="calc">
+        <span class="label">Расчёт стоимости</span>
+        <div class="calc-row"><span>Вес торта</span><div class="stepper"><button data-kg="-0.5">−</button><b id="kg">${String(calcKg).replace('.', ',')} кг</b><button data-kg="0.5">+</button></div></div>
+        <div class="calc-row"><span>Цена за кг</span><b>${money(PRICE_KG)}</b></div>
+        <div class="adds">${ADDS.map(([n, p], i) => `<button class="${adds.has(i) ? 'on' : ''}" data-add="${i}">${n} +${p.toLocaleString('ru-RU')}</button>`).join('')}</div>
+        <div class="total"><div><small>Итого</small><b id="total">${money(calcTotal())}</b></div><small id="prepay">предоплата 50% — ${money(Math.round(calcTotal() / 2))}</small></div>
+      </div>
+      <div class="sh-actions"><button class="btn btn-dark" data-act="price" data-id="${o.id}">Отправить расчёт клиенту</button></div>`;
+    else if (o.status === 'priced') action = `
+      <div class="note">Расчёт <b>${money(o.price)}</b> отправлен клиенту. Ждём подтверждения и предоплату.</div>
+      <div class="sh-actions"><button class="btn btn-dark" data-act="nudge" data-id="${o.id}">Напомнить клиенту</button><button class="btn btn-white" data-act="paid" data-id="${o.id}">Предоплата получена ✓</button></div>`;
+    else if (o.status === 'confirmed') action = `
+      <div class="note">Стоимость <b>${money(o.price)}</b> · предоплата <b>${money(o.price / 2)}</b> получена ✓<br>Остаток при получении — ${money(o.price / 2)}</div>
+      <div class="sh-actions"><button class="btn btn-dark" data-act="remind" data-id="${o.id}">🚚 Напомнить о доставке</button><button class="btn btn-white" data-act="done" data-id="${o.id}">Заказ выполнен</button></div>`;
+    else action = `<div class="note">Выполнен ${o.day} ${MONTH}. Клиенту начислено <b>${Math.round(o.price * .05)} бонусов</b>, отзыв получен ★★★★★</div>`;
+
+    $('sheet').innerHTML = `<div class="grab"></div>
+      <div class="sh-head"><div><div class="num">№${o.id}</div><small>${o.name} · ${o.age}</small></div><span class="chip ${o.status}">${STATUS[o.status]}</span></div>
+      ${o.refs.length ? `<div class="refs">${o.refs.map((r, i) => `<div><img src="img/${r}.webp" alt=""><span>фото ${i + 1}</span></div>`).join('')}</div>` : ''}
+      <div class="details">${rows.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
+      <div class="contact"><button class="btn btn-white" data-toast="Откроется чат с клиентом">💬 ${o.reply}</button><button class="btn btn-white" data-toast="${o.contact} — скопировано">📋 ${o.contact.length > 14 ? 'Телефон' : o.contact}</button></div>
+      ${action}`;
+  }
+  $('sheet').addEventListener('click', e => {
+    const k = e.target.closest('[data-kg]'), a = e.target.closest('[data-add]');
+    if (k) { calcKg = Math.max(1, calcKg + +k.dataset.kg); haptic(); }
+    if (a) { const i = +a.dataset.add; adds.has(i) ? adds.delete(i) : adds.add(i); a.classList.toggle('on'); haptic(); }
+    if (k || a) {
+      $('kg').textContent = String(calcKg).replace('.', ',') + ' кг';
+      $('total').textContent = money(calcTotal()); $('prepay').textContent = `предоплата 50% — ${money(Math.round(calcTotal() / 2))}`;
+    }
+  });
+  $('shade').addEventListener('click', closeSheet);
+  let sy = null;
+  $('sheet').addEventListener('touchstart', e => { sy = $('sheet').scrollTop === 0 ? e.touches[0].clientY : null; }, { passive: true });
+  $('sheet').addEventListener('touchend', e => { if (sy !== null && e.changedTouches[0].clientY - sy > 80) closeSheet(); sy = null; });
+
+  // ---------- Действия ----------
+  const ACTS = {
+    take: o => { o.status = 'work'; return 'Заявка в работе — посчитайте стоимость'; },
+    busy: o => { o.status = 'busy'; return 'Клиенту отправлено: дата занята'; },
+    price: o => { o.price = calcTotal(); o.status = 'priced'; return `Расчёт ${money(o.price)} отправлен клиенту ✓`; },
+    nudge: () => 'Клиенту отправлено напоминание',
+    paid: o => { o.status = 'confirmed'; return 'Заказ подтверждён ✓'; },
+    remind: () => 'Клиенту: «Завтра большой день!» ✓',
+    done: o => { o.status = 'done'; return `Готово! Клиенту +${Math.round(o.price * .05)} бонусов`; },
+  };
+  document.addEventListener('click', e => {
+    const act = e.target.closest('[data-act]');
+    if (act) {
+      e.stopPropagation();
+      const o = ORDERS.find(x => x.id === +act.dataset.id);
+      const msg = ACTS[act.dataset.act](o);
+      renderLists(); toast(msg); haptic('ok');
+      if (o.status === 'busy') closeSheet();
+      else if (act.dataset.act === 'take') { cur = o; renderSheet(); if (!$('sheet').classList.contains('on')) openOrder(o.id); }
+      else if ($('sheet').classList.contains('on')) renderSheet();
+      return;
+    }
+    const op = e.target.closest('[data-open]');
+    if (op) return openOrder(op.dataset.open);
+    const g = e.target.closest('[data-go]');
+    if (g) { if (g.dataset.filter) { filter = g.dataset.filter; renderLists(); } go(g.dataset.go); return; }
+    const f = e.target.closest('#seg [data-f]');
+    if (f) { filter = f.dataset.f; renderLists(); haptic(); return; }
+    const t = e.target.closest('[data-toast]');
+    if (t) toast(t.dataset.toast);
+  });
+
+  // ---------- Вкладки ----------
+  const screens = [...document.querySelectorAll('.screen')];
+  const tabBtns = [...document.querySelectorAll('.tabs button')];
+  const tabOrder = ['home', 'orders', 'cal', 'clients'];
+  let current = 'home';
+  function go(tab) {
+    closeSheet();
+    if (tab === current) return;
+    const dir = tabOrder.indexOf(tab) > tabOrder.indexOf(current);
+    screens.forEach(s => {
+      const on = s.dataset.tab === tab;
+      s.classList.toggle('on', on);
+      s.classList.toggle('left', !on && s.dataset.tab === current && dir);
+      if (on) { s.scrollTop = 0; const r = s.querySelector('.reveal'); r.classList.remove('reveal'); void r.offsetWidth; r.classList.add('reveal'); }
+    });
+    tabBtns.forEach(b => b.classList.toggle('on', b.dataset.go === tab));
+    current = tab; haptic();
+    if (tab === 'home') { countUp(); growBars(); }
+  }
+
+  function countUp() {
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const target = +el.dataset.count, t0 = performance.now();
+      const step = now => { const t = Math.min(1, (now - t0) / 1200); el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3))).toLocaleString('ru-RU'); if (t < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+  }
+
+  const toastEl = $('toast'); let tt;
+  function toast(text) { toastEl.textContent = text; toastEl.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove('show'), 2400); }
+
+  renderLists(); countUp(); growBars();
+</script>
+</body>
+</html>
