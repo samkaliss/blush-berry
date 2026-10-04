@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blush &amp; Berry — мини-приложение</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Telegram Mini App: имя клиента и тема берутся из Telegram, когда приложение открыто в боте -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --pink: #ECC8C5;
+    --pink-2: #F4DAD7;
+    --white: #FFFFFF;
+    --ink: #3A1F22;
+    --ink-soft: rgba(58, 31, 34, .62);
+    --berry: #8E2440;
+    --green: #2F6B43;
+    --display: 'Instrument Serif', 'Cormorant Garamond', 'Times New Roman', serif;
+    --sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ease: cubic-bezier(.22, .7, .25, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { background: var(--pink); color: var(--ink); font: 400 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  a { color: inherit; text-decoration: none; }
+  .label { font: 600 10.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .14em; color: var(--ink-soft); }
+
+  /* ---------- Превью на компьютере: приложение в рамке телефона ---------- */
+  .preview { min-height: 100%; display: flex; align-items: center; justify-content: center; gap: 70px; padding: 40px; }
+  .preview-text { max-width: 340px; }
+  .preview-text .label { display: block; margin-bottom: 16px; }
+  .preview-text h1 { font: 500 44px/1.05 var(--sans); letter-spacing: -.035em; margin-bottom: 16px; }
+  .preview-text h1 em { font: italic 400 1.1em/1 var(--display); color: var(--berry); }
+  .preview-text p { color: var(--ink-soft); margin-bottom: 10px; }
+  .device { width: 400px; height: 820px; border-radius: 54px; padding: 13px; background: #1E1415; box-shadow: 0 50px 100px rgba(110, 50, 55, .3), inset 0 0 0 2px #3A2A2B; flex: none; }
+  .app { position: relative; height: 100%; border-radius: 42px; overflow: hidden; background: var(--pink); display: flex; flex-direction: column; }
+  .device .notch { position: absolute; left: 50%; top: 11px; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #1E1415; z-index: 30; }
+  .tg-bar { display: flex; align-items: center; justify-content: space-between; padding: 50px 18px 8px; font-size: 13.5px; font-weight: 600; }
+  .tg-bar span:first-child { color: var(--ink-soft); }
+
+  /* На телефоне и внутри Telegram — на весь экран, без рамки */
+  @media (max-width: 760px) {
+    .preview { padding: 0; display: block; }
+    .preview-text { display: none; }
+    .device { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; padding: 0; box-shadow: none; background: none; }
+    .app { border-radius: 0; }
+    .device .notch { display: none; }
+    .tg-bar { display: none; }
+  }
+  .in-telegram .preview-text, .in-telegram .notch, .in-telegram .tg-bar { display: none; }
+
+  /* ---------- Экраны ---------- */
+  .screens { position: relative; flex: 1; overflow: hidden; }
+  .screen {
+    position: absolute; inset: 0; overflow-y: auto; padding: 14px 16px 110px; scrollbar-width: none;
+    opacity: 0; transform: translateX(24px); pointer-events: none;
+    transition: opacity .35s var(--ease), transform .5s var(--ease-out);
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen.on { opacity: 1; transform: none; pointer-events: auto; }
+  .screen.left { transform: translateX(-24px); }
+
+  .hello { display: flex; justify-content: space-between; align-items: center; margin: 6px 2px 16px; }
+  .hello .logo { font: 400 24px/1 var(--display); }
+  .hello .logo em { font-style: italic; }
+  .hello .ava { width: 38px; height: 38px; border-radius: 50%; background: var(--white); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+  .greet { font: 500 28px/1.1 var(--sans); letter-spacing: -.03em; margin: 0 2px 18px; }
+  .greet em { font: italic 400 1.12em/1 var(--display); color: var(--berry); }
+  h2 { font: 500 26px/1.1 var(--sans); letter-spacing: -.03em; margin: 4px 2px 16px; }
+  .sec-title { display: flex; justify-content: space-between; align-items: baseline; margin: 24px 2px 10px; }
+  .sec-title b { font-weight: 600; font-size: 16px; }
+  .sec-title button { font-size: 13.5px; font-weight: 600; color: var(--berry); }
+
+  /* Бонусная карта с перламутром */
+  .card {
+    position: relative; overflow: hidden; border-radius: 26px; padding: 22px 22px 20px; color: var(--white);
+    background: linear-gradient(135deg, #D98E98 0%, #B9576C 55%, #8E2440 100%);
+    box-shadow: 0 24px 50px rgba(142, 36, 64, .28);
+    transform-style: preserve-3d; transition: transform .6s var(--ease-out);
+  }
+  .card::before { /* перламутровый блик */
+    content: ''; position: absolute; inset: -40%;
+    background: conic-gradient(from 0deg, transparent 0 20%, rgba(255, 230, 240, .35), rgba(220, 230, 255, .3), rgba(255, 240, 220, .3), transparent 45% 100%);
+    animation: pearl 7s linear infinite; mix-blend-mode: soft-light;
+  }
+  @keyframes pearl { to { transform: rotate(360deg); } }
+  .card > * { position: relative; }
+  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; }
+  .card-top .brand { font: 400 22px/1 var(--display); }
+  .card-top .brand em { font-style: italic; }
+  .level { padding: 6px 11px; border-radius: 999px; background: rgba(255, 255, 255, .22); font-size: 11.5px; font-weight: 700; letter-spacing: .04em; }
+  .card .bal { font: 400 64px/.9 var(--display); letter-spacing: -.03em; }
+  .card .bal-sub { font-size: 14px; opacity: .85; margin: 4px 0 18px; }
+  .card .prog { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .25); overflow: hidden; }
+  .card .prog i { display: block; height: 100%; width: 0; background: var(--white); border-radius: 4px; transition: width 1.4s var(--ease-out) .3s; }
+  .card .prog-text { display: flex; justify-content: space-between; font-size: 12px; opacity: .9; margin-top: 8px; }
+
+  /* Карточка заказа */
+  .order-mini {
+    display: grid; grid-template-columns: 76px 1fr; gap: 14px; align-items: center;
+    padding: 12px; border-radius: 22px; background: var(--white); box-shadow: 0 14px 34px rgba(110, 50, 55, .1);
+    text-align: left; width: 100%;
+  }
+  .order-mini .pic { position: relative; display: block; height: 76px; border-radius: 16px; background: var(--pink-2); overflow: hidden; }
+  .order-mini .pic img { position: absolute; left: 50%; bottom: 6%; height: 88%; width: auto; transform: translateX(-50%); }
+  .order-mini b { display: block; font-weight: 600; font-size: 15.5px; }
+  .order-mini small { color: var(--ink-soft); font-size: 13px; }
+  .dots { display: flex; gap: 5px; margin-top: 8px; }
+  .dots i { flex: 1; height: 4px; border-radius: 4px; background: rgba(58, 31, 34, .12); }
+  .dots i.on { background: var(--ink); }
+  .status { display: inline-block; margin-top: 6px; padding: 4px 9px; border-radius: 999px; background: #FFF4E5; color: #8A5A12; font-size: 11.5px; font-weight: 700; }
+
+  .cta {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    height: 54px; border-radius: 999px; font-weight: 600; font-size: 15.5px;
+    transition: transform .2s var(--ease), background .3s;
+  }
+  .cta:active { transform: scale(.97); }
+  .cta-white { background: var(--white); }
+  .cta-dark { background: var(--ink); color: var(--white); }
+  .mt { margin-top: 12px; }
+
+  .invite {
+    margin-top: 12px; padding: 18px; border-radius: 22px; background: rgba(255, 255, 255, .42); border: 1px solid rgba(255, 255, 255, .8);
+    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; text-align: left; width: 100%;
+  }
+  .invite b { display: block; font-size: 15.5px; font-weight: 600; margin-bottom: 2px; }
+  .invite small { color: var(--ink-soft); font-size: 13px; }
+  .invite .gift { width: 44px; height: 44px; border-radius: 50%; background: var(--white); display: grid; place-items: center; font-size: 20px; }
+
+  .flavors-strip { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 4px 16px 6px; scrollbar-width: none; }
+  .flavors-strip::-webkit-scrollbar { display: none; }
+  .fl-chip { flex: none; scroll-snap-align: start; width: 118px; padding: 10px; border-radius: 20px; background: var(--white); text-align: center; }
+  .fl-chip img { height: 74px; margin: 0 auto 4px; display: block; }
+  .fl-chip span { font-size: 13px; font-weight: 600; }
+
+  /* ---------- Заказ ---------- */
+  .order-hero { position: relative; height: 210px; border-radius: 26px; background: radial-gradient(70% 60% at 50% 60%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%), var(--pink-2); display: grid; place-items: center; overflow: hidden; margin-bottom: 18px; }
+  .order-hero img { position: absolute; left: 50%; bottom: 5%; height: 86%; width: auto; transform: translateX(-50%); filter: drop-shadow(0 18px 18px rgba(110, 50, 55, .18)); }
+  .order-hero .num { position: absolute; left: 18px; top: 10px; font: 400 64px/1 var(--display); color: var(--white); }
+  .order-hero .status { position: absolute; right: 14px; top: 16px; margin: 0; }
+
+  .track { list-style: none; position: relative; margin: 0 2px 6px; }
+  .track::before { content: ''; position: absolute; left: 15px; top: 18px; bottom: 18px; width: 2px; background: rgba(58, 31, 34, .12); }
+  .track li { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 14px; padding: 9px 0; }
+  .track .mark { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--pink); border: 2px solid rgba(58, 31, 34, .15); font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+  .track li.done .mark { background: var(--ink); border-color: var(--ink); color: var(--white); }
+  .track li.now .mark { background: var(--white); border-color: var(--berry); color: var(--berry); box-shadow: 0 0 0 6px rgba(142, 36, 64, .12); animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 10px rgba(142, 36, 64, .04); } }
+  .track b { display: block; font-weight: 600; font-size: 15px; }
+  .track small { color: var(--ink-soft); font-size: 13px; }
+  .track li:not(.done):not(.now) b { color: var(--ink-soft); }
+
+  .details { background: var(--white); border-radius: 22px; padding: 6px 18px; margin-top: 12px; }
+  .details div { display: flex; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px dashed rgba(58, 31, 34, .14); font-size: 14.5px; }
+  .details div:last-child { border-bottom: 0; }
+  .details span { color: var(--ink-soft); }
+  .details b { font-weight: 600; text-align: right; }
+  .price-box { display: flex; justify-content: space-between; align-items: flex-end; padding: 18px; margin-top: 12px; border-radius: 22px; background: rgba(255, 255, 255, .42); border: 1px solid rgba(255, 255, 255, .8); }
+  .price-box b { display: block; font: 400 40px/1 var(--display); letter-spacing: -.02em; }
+  .paid { padding: 6px 10px; border-radius: 999px; background: #EAF4EC; color: var(--green); font-size: 12px; font-weight: 700; }
+
+  /* ---------- Бонусы ---------- */
+  .levels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .lvl { padding: 16px; border-radius: 20px; background: rgba(255, 255, 255, .42); border: 1px solid rgba(255, 255, 255, .8); }
+  .lvl.cur { background: var(--white); border-color: var(--white); box-shadow: 0 12px 30px rgba(110, 50, 55, .1); }
+  .lvl .label { display: block; margin-bottom: 8px; }
+  .lvl b { display: block; font: 400 24px/1.05 var(--display); margin-bottom: 6px; }
+  .lvl p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
+  .history { background: var(--white); border-radius: 22px; padding: 4px 16px; }
+  .history div { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px dashed rgba(58, 31, 34, .14); }
+  .history div:last-child { border-bottom: 0; }
+  .history .ico { width: 38px; height: 38px; border-radius: 50%; background: var(--pink-2); display: grid; place-items: center; font-size: 17px; }
+  .history b { display: block; font-weight: 600; font-size: 14.5px; }
+  .history small { color: var(--ink-soft); font-size: 12.5px; }
+  .history .plus { font-weight: 700; color: var(--green); font-size: 15px; }
+  .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rule { padding: 16px; border-radius: 20px; background: rgba(255, 255, 255, .42); border: 1px solid rgba(255, 255, 255, .8); }
+  .rule b { display: block; font: 400 30px/1 var(--display); margin-bottom: 6px; }
+  .rule p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
+  .ref { margin-top: 12px; padding: 20px; border-radius: 24px; background: var(--ink); color: var(--white); }
+  .ref .label { color: rgba(255, 255, 255, .55); display: block; margin-bottom: 10px; }
+  .ref b { display: block; font: 400 30px/1.05 var(--display); margin-bottom: 8px; }
+  .ref p { font-size: 13.5px; color: rgba(255, 255, 255, .75); margin-bottom: 14px; }
+  .ref .link { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, .1); font-size: 13px; margin-bottom: 12px; overflow: hidden; white-space: nowrap; }
+  .ref .cta { height: 48px; }
+
+  /* ---------- Начинки ---------- */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 999px; background: rgba(255, 255, 255, .45); margin-bottom: 14px; }
+  .seg button { height: 40px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink-soft); transition: background .3s, color .3s; }
+  .seg button.on { background: var(--ink); color: var(--white); }
+  .taste { position: relative; height: 300px; border-radius: 26px; background: radial-gradient(70% 55% at 50% 62%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%), var(--pink-2); overflow: hidden; touch-action: pan-y; }
+  .taste img { position: absolute; left: 50%; top: 50%; height: 118%; transform: translate(-51.8%, -58%); opacity: 0; transition: opacity .45s var(--ease), transform .7s var(--ease-out); }
+  .taste img.on { opacity: 1; }
+  .taste .arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; background: rgba(255, 255, 255, .7); display: grid; place-items: center; font-size: 18px; z-index: 2; }
+  .taste .prev { left: 10px; } .taste .next { right: 10px; }
+  .taste .count { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; }
+  .taste-info { margin-top: 14px; padding: 18px; border-radius: 22px; background: var(--white); }
+  .taste-info h3 { font: 400 32px/1 var(--display); margin-bottom: 8px; }
+  .taste-info p { font-size: 14px; color: var(--ink-soft); margin-bottom: 10px; }
+  .allergens { display: flex; flex-wrap: wrap; gap: 6px; }
+  .allergens span { padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(58, 31, 34, .15); font-size: 12px; font-weight: 600; }
+
+  /* ---------- Нижнее меню ---------- */
+  .tabs {
+    position: absolute; left: 12px; right: 12px; bottom: 14px; z-index: 20;
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px;
+    border-radius: 26px; background: rgba(255, 255, 255, .78);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
+    box-shadow: 0 14px 40px rgba(110, 50, 55, .16);
+  }
+  .tabs button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 0 6px; border-radius: 20px; font-size: 11px; font-weight: 600; color: var(--ink-soft); transition: background .3s, color .3s; }
+  .tabs svg { width: 22px; height: 22px; }
+  .tabs button.on { background: var(--ink); color: var(--white); }
+
+  .toast { position: absolute; left: 50%; bottom: 96px; z-index: 25; transform: translate(-50%, 20px); opacity: 0; padding: 11px 18px; border-radius: 999px; background: var(--ink); color: var(--white); font-size: 13.5px; font-weight: 600; white-space: nowrap; transition: opacity .3s, transform .4s var(--ease-out); pointer-events: none; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .reveal > * { animation: rise .6s var(--ease-out) both; }
+  .reveal > *:nth-child(2) { animation-delay: .05s; } .reveal > *:nth-child(3) { animation-delay: .1s; } .reveal > *:nth-child(4) { animation-delay: .15s; }
+  .reveal > *:nth-child(5) { animation-delay: .2s; } .reveal > *:nth-child(6) { animation-delay: .25s; } .reveal > *:nth-child(7) { animation-delay: .3s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="preview">
+  <div class="preview-text">
+    <span class="label">Telegram · мини-приложение</span>
+    <h1>Бот клиента <em>Blush&nbsp;&amp;&nbsp;Berry</em></h1>
+    <p>Так выглядит приложение, которое открывается внутри Telegram по кнопке в боте.</p>
+    <p>Нажимайте вкладки внизу, листайте начинки стрелками или свайпом. Данные — пример.</p>
+  </div>
+
+  <div class="device">
+    <div class="app" id="app">
+      <span class="notch"></span>
+      <div class="tg-bar"><span>✕ Закрыть</span><span>Blush &amp; Berry</span><span>⋯</span></div>
+
+      <div class="screens">
+        <!-- ГЛАВНАЯ -->
+        <section class="screen on" data-tab="home">
+          <div class="reveal">
+            <div class="hello"><span class="logo">Blush <em>&amp;</em> Berry</span><span class="ava" id="ava">М</span></div>
+            <p class="greet">Привет, <em id="userName">Мария</em></p>
+
+            <div class="card" id="bonusCard">
+              <div class="card-top"><span class="brand">Blush <em>&amp;</em> Berry</span><span class="level">Сладкий друг</span></div>
+              <div class="bal" data-count="1740">0</div>
+              <div class="bal-sub">бонусов · можно оплатить до 20% торта</div>
+              <div class="prog"><i style="--w:50%"></i></div>
+              <div class="prog-text"><span>1 из 3 заказов</span><span>до «Свой человек»</span></div>
+            </div>
+
+            <div class="sec-title"><b>Ваш заказ</b><button data-go="order">Подробнее</button></div>
+            <button class="order-mini" data-go="order">
+              <span class="pic"><img src="img/cake-wedding.webp" alt=""></span>
+              <span>
+                <b>Заявка №27 · свадьба</b>
+                <small>12 июня · доставка к 15:00</small><br>
+                <span class="status">Согласование эскиза</span>
+                <span class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+              </span>
+            </button>
+
+            <a class="cta cta-white mt" href="index.html#calc" target="_blank">Рассчитать новый торт →</a>
+
+            <button class="invite" data-go="bonus">
+              <span><b>Пригласите друга</b><small>Другу −10% на первый торт, вам +500 бонусов</small></span>
+              <span class="gift">🎁</span>
+            </button>
+
+            <div class="sec-title"><b>Наши вкусы</b><button data-go="taste">Все</button></div>
+            <div class="flavors-strip">
+              <button class="fl-chip" data-go="taste" data-f="0"><img src="img/03-filling.webp" alt=""><span>Ягодная</span></button>
+              <button class="fl-chip" data-go="taste" data-f="1"><img src="img/fill-vanilla.webp" alt=""><span>Ванильная</span></button>
+              <button class="fl-chip" data-go="taste" data-f="2"><img src="img/fill-pistachio.webp" alt=""><span>Фисташковая</span></button>
+              <button class="fl-chip" data-go="taste" data-f="3"><img src="img/fill-chocolate.webp" alt=""><span>Шоколадная</span></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ЗАКАЗ -->
+        <section class="screen" data-tab="order">
+          <div class="reveal">
+            <h2>Мой заказ</h2>
+            <div class="order-hero"><span class="num">№27</span><span class="status">Согласование</span><img src="img/cake-wedding.webp" alt=""></div>
+            <ol class="track">
+              <li class="done"><span class="mark">✓</span><span><b>Заявка</b><small>Получена 2 июня</small></span></li>
+              <li class="done"><span class="mark">✓</span><span><b>Расчёт</b><small>28 800 ₽ · дата свободна</small></span></li>
+              <li class="now"><span class="mark">03</span><span><b>Согласование</b><small>Эскиз пришлём до 5 июня</small></span></li>
+              <li><span class="mark">04</span><span><b>Праздник</b><small>12 июня, доставка к 15:00</small></span></li>
+            </ol>
+            <div class="details">
+              <div><span>Повод</span><b>Свадьба</b></div>
+              <div><span>Гостей</span><b>60 · ≈ 9 кг · 3 яруса</b></div>
+              <div><span>Бисквит</span><b>Шоколадный</b></div>
+              <div><span>Начинка</span><b>Ягодная</b></div>
+              <div><span>Получение</span><b>Доставка</b></div>
+            </div>
+            <div class="price-box"><div><span class="label">Стоимость</span><b>28 800 ₽</b></div><span class="paid">Предоплата 14 400 ₽ ✓</span></div>
+            <button class="cta cta-dark mt" data-toast="Напишите вопрос — бот передаст его кондитеру">💬 Задать вопрос кондитеру</button>
+            <button class="cta cta-white mt" data-toast="Выберите удобное время — кондитер подтвердит">Изменить время доставки</button>
+          </div>
+        </section>
+
+        <!-- БОНУСЫ -->
+        <section class="screen" data-tab="bonus">
+          <div class="reveal">
+            <h2>Бонусы</h2>
+            <div class="card">
+              <div class="card-top"><span class="brand">Ваш баланс</span><span class="level">Сладкий друг</span></div>
+              <div class="bal" data-count="1740">0</div>
+              <div class="bal-sub">бонусов · 1 бонус = 1 ₽</div>
+            </div>
+            <div class="levels">
+              <div class="lvl cur"><span class="label">Сейчас</span><b>Сладкий друг</b><p>5% бонусами с каждого заказа</p></div>
+              <div class="lvl"><span class="label">После 3 заказов</span><b>Свой человек</b><p>Бесплатная доставка и дегустационный сет</p></div>
+            </div>
+
+            <div class="sec-title"><b>История</b></div>
+            <div class="history">
+              <div><span class="ico">⭐</span><span><b>Отзыв с фото</b><small>13 июня</small></span><span class="plus">+300</span></div>
+              <div><span class="ico">🎂</span><span><b>Заказ №27</b><small>12 июня · 5% от 28 800 ₽</small></span><span class="plus">+1 440</span></div>
+            </div>
+
+            <div class="sec-title"><b>Как копить</b></div>
+            <div class="rules">
+              <div class="rule"><b>5%</b><p>с каждого заказа</p></div>
+              <div class="rule"><b>до 20%</b><p>торта можно оплатить бонусами</p></div>
+              <div class="rule"><b>+300</b><p>за отзыв с фото</p></div>
+              <div class="rule"><b>−10%</b><p>на повторный праздник</p></div>
+            </div>
+
+            <div class="ref">
+              <span class="label">Приведи друга</span>
+              <b>Другу −10%, вам +500</b>
+              <p>Поделитесь ссылкой — бонусы придут, когда друг сделает заказ.</p>
+              <div class="link">🔗 t.me/blushberry_bot?start=maria</div>
+              <button class="cta cta-white" data-toast="Ссылка скопирована ✓" data-copy="https://t.me/blushberry_bot?start=maria">Поделиться ссылкой</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- НАЧИНКИ -->
+        <section class="screen" data-tab="taste">
+          <div class="reveal">
+            <h2>Вкусы</h2>
+            <div class="seg"><button class="on" data-kind="fill">Начинки</button><button data-kind="sponge">Бисквиты</button></div>
+            <div class="taste" id="taste">
+              <button class="arrow prev" aria-label="Предыдущий">‹</button>
+              <button class="arrow next" aria-label="Следующий">›</button>
+              <span class="count label" id="tasteCount">1 / 4</span>
+            </div>
+            <div class="taste-info">
+              <h3 id="tasteName">Ягодная</h3>
+              <p id="tasteDesc"></p>
+              <div class="allergens" id="tasteAll"></div>
+            </div>
+            <button class="cta cta-dark mt" data-toast="Передали кондитеру — учтём в следующем заказе ✓">Хочу этот вкус</button>
+          </div>
+        </section>
+      </div>
+
+      <nav class="tabs">
+        <button class="on" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg>Главная</button>
+        <button data-go="order"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 12h16v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM6 12V9h12v3M12 9V5"/><path d="M12 3.5c.8.8 1 1.3 1 1.7a1 1 0 0 1-2 0c0-.4.2-.9 1-1.7z"/></svg>Заказ</button>
+        <button data-go="bonus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 10h16v10H4zM3 7h18v3H3zM12 7v13M12 7c-1.5-3-5-3-5-.5S12 7 12 7zm0 0c1.5-3 5-3 5-.5S12 7 12 7z"/></svg>Бонусы</button>
+        <button data-go="taste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 18l9-13 9 13z"/><path d="M6.5 13h11M9 9.5h6"/></svg>Вкусы</button>
+      </nav>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Внутри Telegram: имя клиента и полноэкранный режим ----------
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg && tg.initData) {
+    document.body.classList.add('in-telegram');
+    tg.ready(); tg.expand();
+    tg.setHeaderColor && tg.setHeaderColor('#ECC8C5');
+    tg.setBackgroundColor && tg.setBackgroundColor('#ECC8C5');
+    const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (u && u.first_name) {
+      document.getElementById('userName').textContent = u.first_name;
+      document.getElementById('ava').textContent = u.first_name[0];
+    }
+    // Личная ссылка-приглашение: имя бота приходит в адресе (?bot=...), id — от Telegram
+    const bot = new URLSearchParams(location.search).get('bot');
+    if (bot && u) {
+      const link = `https://t.me/${bot}?start=r${u.id}`;
+      document.querySelector('.ref .link').textContent = '🔗 ' + link.replace('https://', '');
+      const share = document.querySelector('.ref [data-copy]');
+      share.dataset.copy = link;
+      share.addEventListener('click', () => tg.openTelegramLink(
+        `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Торты Blush & Berry — по моей ссылке −10% на первый торт 🎂')}`));
+    }
+    // Сайт открываем в браузере, а не внутри мини-приложения
+    document.querySelectorAll('a[target="_blank"]').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault(); tg.openLink(a.href);
+    }));
+  }
+
+  // ---------- Вкладки ----------
+  const screens = [...document.querySelectorAll('.screen')];
+  const tabBtns = [...document.querySelectorAll('.tabs button')];
+  const order = ['home', 'order', 'bonus', 'taste'];
+  let current = 'home';
+  function go(tab) {
+    if (tab === current) return;
+    const dir = order.indexOf(tab) > order.indexOf(current);
+    screens.forEach(s => {
+      const on = s.dataset.tab === tab;
+      s.classList.toggle('on', on);
+      s.classList.toggle('left', !on && s.dataset.tab === current && dir);
+      if (on) { s.scrollTop = 0; restartReveal(s); countUp(s); }
+    });
+    tabBtns.forEach(b => b.classList.toggle('on', b.dataset.go === tab));
+    current = tab;
+    tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged();
+  }
+  function restartReveal(s) { const r = s.querySelector('.reveal'); r.style.animation = 'none'; r.classList.remove('reveal'); void r.offsetWidth; r.classList.add('reveal'); }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-go]');
+    if (b) { go(b.dataset.go); if (b.dataset.f) setTaste('fill', +b.dataset.f); }
+  });
+
+  // ---------- Счётчик бонусов и прогресс ----------
+  function countUp(scope) {
+    scope.querySelectorAll('[data-count]').forEach(el => {
+      const target = +el.dataset.count, t0 = performance.now();
+      const tick = now => {
+        const t = Math.min(1, (now - t0) / 1100);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - t, 3))).toLocaleString('ru-RU');
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    scope.querySelectorAll('.prog i').forEach(i => { i.style.width = '0'; requestAnimationFrame(() => requestAnimationFrame(() => { i.style.width = i.style.getPropertyValue('--w'); })); });
+  }
+  countUp(document.querySelector('.screen.on'));
+
+  // Карта слегка наклоняется за пальцем / курсором
+  const card = document.getElementById('bonusCard');
+  card.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    card.style.transform = `perspective(700px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg)`;
+  });
+  card.addEventListener('pointerleave', () => { card.style.transform = ''; });
+
+  // ---------- Вкусы: карусель ----------
+  const TASTES = {
+    fill: [
+      { img: 'img/03-filling.webp', name: 'Ягодная', desc: 'Сливочный крем и ягодное конфи из малины и клубники. Свежий, с лёгкой кислинкой.', all: ['молоко', 'яйца', 'глютен'] },
+      { img: 'img/fill-vanilla.webp', name: 'Ванильная', desc: 'Нежный крем на сливках с натуральной ванилью. Любят и дети, и взрослые.', all: ['молоко', 'яйца', 'глютен'] },
+      { img: 'img/fill-pistachio.webp', name: 'Фисташковая', desc: 'Крем с фисташковой пастой — насыщенный, ореховый, немного солоноватый.', all: ['орехи', 'молоко', 'яйца', 'глютен'] },
+      { img: 'img/fill-chocolate.webp', name: 'Шоколадная', desc: 'Шоколадный ганаш из бельгийского шоколада. Для настоящих сладкоежек.', all: ['молоко', 'яйца', 'глютен', 'соя'] },
+    ],
+    sponge: [
+      { img: 'img/02-sponge.webp', name: 'Шоколадный', desc: 'Влажный шоколадный бисквит — основа ягодного торта.', all: ['яйца', 'глютен', 'молоко'] },
+      { img: 'img/sponge-red.webp', name: 'Красный бархат', desc: 'Бархатный бисквит с лёгким вкусом какао и ярким цветом на срезе.', all: ['яйца', 'глютен', 'молоко'] },
+      { img: 'img/sponge-honey.webp', name: 'Медовый', desc: 'Тонкие ароматные коржи на натуральном мёде.', all: ['мёд', 'яйца', 'глютен'] },
+    ],
+  };
+  const taste = document.getElementById('taste');
+  const imgs = {};
+  Object.entries(TASTES).forEach(([kind, list]) => {
+    imgs[kind] = list.map(t => { const i = document.createElement('img'); i.src = t.img; i.alt = t.name; taste.prepend(i); return i; });
+  });
+  let kind = 'fill', idx = 0;
+  function setTaste(k, i) {
+    kind = k; const list = TASTES[k];
+    idx = (i + list.length) % list.length;
+    Object.values(imgs).flat().forEach(im => im.classList.remove('on'));
+    imgs[k][idx].classList.add('on');
+    const t = list[idx];
+    document.getElementById('tasteName').textContent = t.name;
+    document.getElementById('tasteDesc').textContent = t.desc;
+    document.getElementById('tasteAll').innerHTML = t.all.map(a => `<span>${a}</span>`).join('');
+    document.getElementById('tasteCount').textContent = `${idx + 1} / ${list.length}`;
+    document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.kind === k));
+  }
+  taste.querySelector('.prev').addEventListener('click', () => setTaste(kind, idx - 1));
+  taste.querySelector('.next').addEventListener('click', () => setTaste(kind, idx + 1));
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setTaste(b.dataset.kind, 0)));
+  let sx = null;
+  taste.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+  taste.addEventListener('touchend', e => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 40) setTaste(kind, idx + (dx < 0 ? 1 : -1)); sx = null; });
+  setTaste('fill', 0);
+
+  // ---------- Всплывающие подсказки ----------
+  const toast = document.getElementById('toast');
+  let tt;
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-toast]');
+    if (!b) return;
+    if (b.dataset.copy && navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy).catch(() => {});
+    toast.textContent = b.dataset.toast; toast.classList.add('show');
+    clearTimeout(tt); tt = setTimeout(() => toast.classList.remove('show'), 2200);
+    tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred('success');
+  });
+</script>
+</body>
+</html>
